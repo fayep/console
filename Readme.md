@@ -11,5 +11,4 @@ There are probably plenty of ways of doing this better.
 Put the binary somewhere nice if you like?
 
 ## Running
-    console <ipaddress/hostname>
-    
+    console <ipaddress/hostname> <username> <password>

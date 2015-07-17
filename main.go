@@ -18,7 +18,7 @@ import (
 )
 
 // requestCookie: Get a session cookie from the BMC
-func requestCookie(client *http.Client, base url.URL) string {
+func requestCookie(client *http.Client, base url.URL, username string, password string) string {
 	form := url.Values{}
 	form.Set("WEBVAR_USERNAME", username)
 	form.Add("WEBVAR_PASSWORD", password)
@@ -78,27 +78,38 @@ func writeJNLPFile(jnlp string) *os.File {
 	return file
 }
 
-func main() {
-	if len(os.Args) != 2 {
-		fmt.Printf("Usage: %s host\nConnect to an AMIBios console.\n", filepath.Base(os.Args[0]))
-		os.Exit(0)
-	}
-	hostAddresses, err := net.LookupHost(os.Args[1])
-	address := hostAddresses[0]
-	if err != nil {
+func parseCookies(base *url.URL, js string, cookies http.CookieJar) {
+	vm := otto.New()
+	if result, err := vm.Run(js + "\nWEBVAR_JSONVAR_WEB_SESSION.WEBVAR_STRUCTNAME_WEB_SESSION[0].SESSION_COOKIE"); err == nil {
+		cookie, _ := result.ToString()
+		cookies.SetCookies(base, []*http.Cookie{{Name: "SessionCookie", Value: cookie}})
+	} else {
 		log.Fatalf("Error: %s\n", err)
 	}
+}
+
+func main() {
+	if len(os.Args) != 4 {
+		fmt.Printf("Usage: %s host username password\nConnect to an AMIBios console.\n", filepath.Base(os.Args[0]))
+		os.Exit(0)
+	}
+	var address string
+	// Validate the address and return the first.
+	if hostAddresses, err := net.LookupHost(os.Args[1]); err == nil {
+		address = hostAddresses[0]
+	} else {
+		log.Fatalf("Error: %s\n", err)
+	}
+	username := os.Args[2]
+	password := os.Args[3]
 	cookies, _ := cookiejar.New(nil)
 	client := &http.Client{
 		Jar: cookies,
 	}
 	fmt.Fprintf(os.Stderr, "Trying host %s\n", address)
 	base, _ := url.Parse(fmt.Sprintf("http://%s/", address))
-	vm := otto.New()
-	js := requestCookie(client, *base)
-	result, err := vm.Run(js + "\nWEBVAR_JSONVAR_WEB_SESSION.WEBVAR_STRUCTNAME_WEB_SESSION[0].SESSION_COOKIE")
-	cookie, _ := result.ToString()
-	cookies.SetCookies(base, []*http.Cookie{{Name: "SessionCookie", Value: cookie}})
+	parseCookies(base, requestCookie(client, *base, username, password), cookies)
+
 	jnlp := requestJNLP(client, *base, address)
 	file := writeJNLPFile(jnlp)
 	//	syscall.Exec("/bin/bash", []string{"bash", "-c", fmt.Sprintf("javaws %s", file.Name())}, os.Environ())
