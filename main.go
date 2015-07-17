@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/robertkrimen/otto"
@@ -116,5 +117,9 @@ func main() {
 	file := writeJNLPFile(jnlp)
 	//	syscall.Exec("/bin/bash", []string{"bash", "-c", fmt.Sprintf("javaws %s", file.Name())}, os.Environ())
 	//	syscall.Exec("/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Commands/javaws", []string{"javaws", file.Name()}, []string{"PATH=/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Commands","JAVA_HOME=/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home"})
-	syscall.Exec("/System/Library/Frameworks/JavaVM.framework/Commands/javaws", []string{"/System/Library/Frameworks/JavaVM.framework/Commands/javaws", file.Name()}, os.Environ())
+	command := []string{
+		"/bin/bash", "-c", fmt.Sprintf("javaws %s", file.Name()),
+	}
+	log.Printf("Executing: %s", strings.Join(command, " "))
+	syscall.Exec(command[0], command, os.Environ())
 }

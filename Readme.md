@@ -6,9 +6,10 @@ console on an AMIBIOS based LOM.
 There are probably plenty of ways of doing this better.
 
 ## Installing
-    go build
+    go get github.com/fayep/console
+    go install github.com/fayep/console
 
-Put the binary somewhere nice if you like?
+Make sure your $GOPATH/bin is in the PATH.
 
 ## Running
     console <ipaddress/hostname> <username> <password>
