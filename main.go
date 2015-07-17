@@ -78,6 +78,7 @@ func writeJNLPFile(jnlp string) *os.File {
 	return file
 }
 
+// parseCookies set the sessionCookie via Javascript evaluation
 func parseCookies(base *url.URL, js string, cookies http.CookieJar) {
 	vm := otto.New()
 	if result, err := vm.Run(js + "\nWEBVAR_JSONVAR_WEB_SESSION.WEBVAR_STRUCTNAME_WEB_SESSION[0].SESSION_COOKIE"); err == nil {
@@ -100,6 +101,7 @@ func main() {
 	} else {
 		log.Fatalf("Error: %s\n", err)
 	}
+	// No better than ipmitool here.
 	username := os.Args[2]
 	password := os.Args[3]
 	cookies, _ := cookiejar.New(nil)
